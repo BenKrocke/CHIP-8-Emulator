@@ -5,5 +5,5 @@ use chip8::{
 };
 
 fn main() {
-    let mut c = init_chip();
+    let mut chip = init_chip();
 }
