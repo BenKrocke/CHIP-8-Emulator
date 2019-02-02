@@ -43,9 +43,10 @@ impl Chip8 {
         println!("Loading: {:?}", game);
         
         let contents = fs::read(game).expect("Something went wrong reading the file");
+        let mut index = 0x200;
         for b in 0..contents.len() {
-            self.memory[b] = contents[b];
-            println!("Memory: {:?}", self.memory[b]);
+            self.memory[index] = contents[b];
+            index += 1;
         }
     }
     
@@ -129,6 +130,10 @@ impl Chip8 {
         (self.registers[0xf] & 0xFF)
     }
 
+    // pub fn get_register(&self, register: ) -> u32 {
+
+    // }
+
 
     pub fn execute(&mut self, instruction: u32) {
         // If opcode is 0x6015, bitflip it to 0x6000
@@ -138,6 +143,10 @@ impl Chip8 {
         let high = instruction & 0xF000;
 
         match high {
+            0x1000 => {
+                let low = 0x0FFF & instruction;
+                self.pc = low;
+            },
             0x6000 => { //6XNN	Store number NN in register VX
                 let low = 0x00FF & instruction;
                 let register = (instruction & 0x0F00) >> 8;
@@ -204,6 +213,9 @@ impl Chip8 {
                     }
                 }
             },
+            0xB000 => {
+                //TODO: Cornest
+            },
             0xC000 => {
                 let low = 0x0FF & instruction;
                 println!("Low: {}.", low);
@@ -223,32 +235,46 @@ impl Chip8 {
         }
     }
 
+
+    // memory 1: 0x60
+    // in binary: 0000 0000 0110 0000
+    // memory 2: 0x15
+    // in binary: 0000 0000 0001 0101
+
+    // je wil: 0x6015
+
+    // dit werkt natuurlijk niet: 60 + 15
+
+    // shift memory 1 met 8, zodat je genoeg nullen toevoegt aan de binary zodat je 0x6000 krijgt
+    // 0x60
+    // << 8
+    // wordt:
+
+    // hex:
+    // 1= 0x6000
+    // 2= 0x15
+
+    // en binary:
+    // 1= 0000 0000 0110 0000 0000 0000 <- zie hoe hij is geshift
+    // 2=           0000 0000 0001 0101
+
+    // vervolgens inclusive bit OR met beide values
+    // 1 | 2
+
+    // dan krijg je dit:
+    // 1= 0000 0000 0110 0000 0000 0000
+    // 2=           0000 0000 0001 0101
+    // r= 0000 0000 0110 0000 0001 0101
+
+    // result binary to hex: 0x6015 = je opcode
+
     pub fn cycle(&mut self) {
-    
-     // A cycle loop of the chip8 processor should 
-     //  
-     //  fetch the instruction pointed at by the PC 
-     //  increment the PC 
-     //  decode the instruction 
-     //  execute the instruction 
-     //  repeat
-     
-     
-        
-
-        // self.pc += 1;
-        // let one = ((self.memory[self.pc as usize] << 4) as u16 & 0xFF00);
-        // self.pc += 1;
-        // let two = (self.memory[self.pc as usize] as u16 & 0xFF);
-        // let instruction = one | two;
-        // let time = SystemTime::now();
-        // let millitime = Duration::new(time).as_millis() as u32;
-
-        // if (millitime > self.next_timer) {
-        //     self.countdown_timers();
-        //     self.next_timer = millitime + (1000 / 60);
-        // }
-        // execute(instruction);
+        let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
+        self.pc += 1;
+        let two = self.memory[self.pc as usize] as u16 & 0xFF;
+        self.pc += 1;
+        let instruction = one | two;
+        self.execute(instruction as u32);
     }
 
     fn countdown_timers(&mut self) {
@@ -577,5 +603,33 @@ mod clock_execution_and_memory_tests {
         assert_eq!(0x25,    chip8.get_v2());
         assert_eq!(0x30,    chip8.get_v3());
         assert_eq!(0x208,   chip8.get_pc());
+    }
+}
+
+#[cfg(test)]
+mod flow_control_tests {
+    use super::*;
+
+    fn set_up() -> Chip8 {
+        let mut chip = init_chip();
+        chip.execute(0x6064);
+        chip.execute(0x6127);
+        chip.execute(0x6212);
+        chip.execute(0x63AE);
+        chip.execute(0x64FF);
+        chip.execute(0x65B4);
+        chip.execute(0x6642);
+        chip.execute(0x6F25);
+        chip
+    }
+
+    #[test]
+    fn test_jump() {
+        let mut chip8 = set_up();
+        chip8.execute(0x1DAE);
+        assert_eq!(0xDAE, chip8.get_pc());
+
+        chip8.execute(0xB432);
+        assert_eq!(1174, chip8.get_pc());
     }
 }

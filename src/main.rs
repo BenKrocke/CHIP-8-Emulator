@@ -6,4 +6,5 @@ use chip8::{
 
 fn main() {
     let mut chip = init_chip();
+    chip.cycle();
 }
