@@ -45,6 +45,7 @@ impl Chip8 {
         let contents = fs::read(game).expect("Something went wrong reading the file");
         for b in 0..contents.len() {
             self.memory[b] = contents[b];
+            println!("Memory: {:?}", self.memory[b]);
         }
     }
     
@@ -128,14 +129,18 @@ impl Chip8 {
         (self.registers[0xf] & 0xFF)
     }
 
+
     pub fn execute(&mut self, instruction: u32) {
         // If opcode is 0x6015, bitflip it to 0x6000
+        //              0xF000
+        //              &
+        //              0x6000
         let high = instruction & 0xF000;
 
         match high {
             0x6000 => { //6XNN	Store number NN in register VX
                 let low = 0x00FF & instruction;
-                let register = (instruction & 0x0f00) >> 8;
+                let register = (instruction & 0x0F00) >> 8;
                 self.set_vx(low, register as usize);
             },
             0x7000 => { //7XNN	Add number NN to register VX
@@ -219,15 +224,15 @@ impl Chip8 {
     }
 
     pub fn cycle(&mut self) {
-    /**
-     * A cycle loop of the chip8 processor should 
-     *  
-     *  fetch the instruction pointed at by the PC 
-     *  increment the PC 
-     *  decode the instruction 
-     *  execute the instruction 
-     *  repeat
-     **/
+    
+     // A cycle loop of the chip8 processor should 
+     //  
+     //  fetch the instruction pointed at by the PC 
+     //  increment the PC 
+     //  decode the instruction 
+     //  execute the instruction 
+     //  repeat
+     
      
         
 
