@@ -632,4 +632,43 @@ mod flow_control_tests {
         chip8.execute(0xB432);
         assert_eq!(1174, chip8.get_pc());
     }
+
+    #[test]
+    fn test_subroutines() {
+        let mut chip8 = set_up();
+        chip8.execute(0x2DAE);
+        assert_eq!(0xDAE, chip8.get_pc());
+
+        chip8.execute(0x00EE);
+        assert_eq!(0x200, chip8.get_pc());
+    }
+
+    
+
+    
+    #[test]
+    fn test_equal_jumps() {
+        let mut chip8 = set_up();
+        chip8.execute(0x3064);
+        assert_eq!(0x202, chip8.get_pc());
+
+        chip8.execute(0x3164);
+        assert_eq!(0x202, chip8.get_pc());
+
+        chip8.execute(0x6764);
+        assert_eq!(0x204, chip8.get_pc());
+
+        chip8.execute(0x5170);
+        assert_eq!(0x204, chip8.get_pc());
+    }
+
+    #[test]
+    fn test_non_equal_jumps() {
+        let mut chip8 = set_up();
+        chip8.execute(0x2DAE);
+        assert_eq!(0xDAE, chip8.get_pc());
+
+        chip8.execute(0x00EE);
+        assert_eq!(0x200, chip8.get_pc());
+    }
 }
