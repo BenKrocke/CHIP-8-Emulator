@@ -147,6 +147,12 @@ impl Chip8 {
                 let low = 0x0FFF & instruction;
                 self.pc = low;
             },
+            0x2000 => {
+                self.stack[self.sp as usize] = self.pc;
+                self.sp = self.sp + 1;
+                let low = 0x0FFF & instruction;
+                self.pc = low;
+            },
             0x6000 => { //6XNN	Store number NN in register VX
                 let low = 0x00FF & instruction;
                 let register = (instruction & 0x0F00) >> 8;
@@ -214,7 +220,8 @@ impl Chip8 {
                 }
             },
             0xB000 => {
-                //TODO: Cornest
+                let low = 0x0FFF & instruction;
+                self.pc = low + self.get_v0();
             },
             0xC000 => {
                 let low = 0x0FF & instruction;
@@ -643,9 +650,6 @@ mod flow_control_tests {
         assert_eq!(0x200, chip8.get_pc());
     }
 
-    
-
-    
     #[test]
     fn test_equal_jumps() {
         let mut chip8 = set_up();
