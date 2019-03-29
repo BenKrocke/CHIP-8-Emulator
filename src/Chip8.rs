@@ -153,6 +153,14 @@ impl Chip8 {
                 let low = 0x0FFF & instruction;
                 self.pc = low;
             },
+            0x3000 => {
+                let low = 0x00FF & instruction;
+                let register = (0x0F00 & instruction) >> 8;
+                if (self.get_vx(register as usize) == low)
+                {
+                    self.pc = self.pc + 0x2;
+                }
+            },
             0x6000 => { //6XNN	Store number NN in register VX
                 let low = 0x00FF & instruction;
                 let register = (instruction & 0x0F00) >> 8;
@@ -219,6 +227,15 @@ impl Chip8 {
                     }
                 }
             },
+            0x0000 => {
+                match instruction {
+                    0x00EE => {
+                        self.sp = self.sp - 1;
+                        self.pc = self.stack[self.sp as usize];
+                    },
+                    _ => panic!("Unsupported opcode.")
+                }
+            }
             0xB000 => {
                 let low = 0x0FFF & instruction;
                 self.pc = low + self.get_v0();
@@ -660,6 +677,7 @@ mod flow_control_tests {
         assert_eq!(0x202, chip8.get_pc());
 
         chip8.execute(0x6764);
+        chip8.execute(0x5070);
         assert_eq!(0x204, chip8.get_pc());
 
         chip8.execute(0x5170);
@@ -669,10 +687,18 @@ mod flow_control_tests {
     #[test]
     fn test_non_equal_jumps() {
         let mut chip8 = set_up();
-        chip8.execute(0x2DAE);
-        assert_eq!(0xDAE, chip8.get_pc());
-
-        chip8.execute(0x00EE);
-        assert_eq!(0x200, chip8.get_pc());
+        chip8.execute(0x4064); // Skip if V0 != 0x64 (it won't skip)
+       assert_eq!(0x200, chip8.get_pc());//Increment the PC by 2
+       
+       chip8.execute(0x4164); // Skip if V1 == 0x64, skips because V1 == 0x27
+       assert_eq!(0x202, chip8.get_pc());//Do not increment the PC
+       
+       chip8.execute(0x6764); // Set V7 to 64
+       chip8.execute(0x9070); // Skip if V0 != V7(It won't skip)
+       assert_eq!(0x202, chip8.get_pc());//Increment the PC by 2
+       
+       chip8.execute(0x9170); // Skip if V1 != V7 
+       assert_eq!(0x204, chip8.get_pc());//Increment the PC by 2
+       
     }
 }
