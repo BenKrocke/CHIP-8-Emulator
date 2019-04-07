@@ -161,6 +161,20 @@ impl Chip8 {
                     self.pc = self.pc + 0x2;
                 }
             },
+            0x4000 => { //Skip the following instruction if the value of register VX is not equal to NN
+                let low = 0x0FF & instruction;
+                let register = (instruction & 0x0f00) >> 8;
+                if (self.get_vx(register as usize) != low) {
+                    self.pc = self.pc + 0x2;
+                }
+            },
+            0x5000 => { //Skip the following instruction if the value of register VX is equal to the value of register VY
+                let reg_x = (instruction & 0x0F00) >> 8;
+                let reg_y = (instruction & 0x00F0) >> 4;
+                if (self.get_vx(reg_x as usize) == self.get_vx(reg_y as usize)) {
+                    self.pc = self.pc + 2;
+                }
+            },
             0x6000 => { //6XNN	Store number NN in register VX
                 let low = 0x00FF & instruction;
                 let register = (instruction & 0x0F00) >> 8;
@@ -227,6 +241,13 @@ impl Chip8 {
                     }
                 }
             },
+            0x9000 => { // Skip the following instruction if the value of register VX is not equal to the value of register VY
+                let register_y = (instruction & 0x00f0) >> 4;
+                let register_x = (instruction & 0x0f00) >> 8;
+                if (self.get_vx(register_x as usize) != self.get_vx(register_y as usize)) {
+                    self.pc = self.pc + 0x2;
+                }
+            },
             0x0000 => {
                 match instruction {
                     0x00EE => {
@@ -235,7 +256,57 @@ impl Chip8 {
                     },
                     _ => panic!("Unsupported opcode.")
                 }
-            }
+            },
+            0xF000 => {
+                let low = instruction & 0xFF;
+                let register = (instruction & 0x0F00) >> 8;
+
+                match low {
+                    0x15 => {
+                        self.delay_timer = self.get_vx(register as usize);
+                    },
+                    // 0x65 => {
+                    //     usize maxRegister = (usize) register;
+                    //         for (let i = 0; i <= maxRegister; i++) {
+                    //             self.set_vx(self.memory[self.i_register as usize], i as usize);
+                    //             self.i_register = self.i_register + 1;
+                    //     }
+                    // },
+                    // 0x55 => {
+                    //     usize maxRegister = (usize) register;
+                    //     for (let i = 0; i <= maxRegister; i++) {
+                    //         self.memory[self.i_register as usize] = (usize) self.get_vx(i as usize);
+                    //         self.i_register = self.i_register + 1;
+                    //     }
+                    // },
+                    0x18 => {
+                        self.sound_timer = self.get_vx(register as usize);
+                    },
+                    // 0x0A => {
+                    //     if (Input.read() == -1) {
+                    //         self.pc = self.pc - 0x2;
+                    //     } else {
+                    //         self.set_vx(Input.read(), register as usize);
+                    //     }
+                    // },
+                    0x07 => {
+                        self.set_vx(self.delay_timer, register as usize);
+                    },
+                    // 0x29 => {
+                    //     self.i_register = getCharacterAddress(self.get_vx(register as usize));
+                    // },
+                    // 0x33 => {
+                    //     let value = self.get_vx(register as usize);
+                    //     self.memory[self.i_register as usize] = (usize) (value / 100);
+                    //     self.memory[(self.i_register + 1) as usize] = (usize) (((value) % 100) / 10);
+                    //     self.memory[(self.i_register + 2) as usize] = (usize) (((value) % 100) % 10);
+                    // },
+                    // 0x1E => {
+                    //     self.i_register = self.i_register + self.get_vx(register as usize);
+                    // },
+                    _ => panic!("Unsupported opcode.")
+                }
+            },
             0xB000 => {
                 let low = 0x0FFF & instruction;
                 self.pc = low + self.get_v0();
@@ -696,9 +767,63 @@ mod flow_control_tests {
        chip8.execute(0x6764); // Set V7 to 64
        chip8.execute(0x9070); // Skip if V0 != V7(It won't skip)
        assert_eq!(0x202, chip8.get_pc());//Increment the PC by 2
-       
+    
        chip8.execute(0x9170); // Skip if V1 != V7 
        assert_eq!(0x204, chip8.get_pc());//Increment the PC by 2
        
     }
+}
+
+#[cfg(test)]
+mod timer_tests {
+    use super::*;
+
+    fn set_up() -> Chip8 {
+        let mut chip = init_chip();
+        chip.load_rom(std::string::String::from("E05TimerLoop.ch8"));
+        chip.execute(0x6064);
+        chip.execute(0x6127);
+        chip.execute(0x6212);
+        chip.execute(0x63AE);
+        chip.execute(0x64FF);
+        chip.execute(0x65B4);
+        chip.execute(0x6642);
+        chip.execute(0x6F25);
+        chip
+    }
+
+    #[test]
+    fn test_delay_timer_opcodes() {
+        let mut chip8 = set_up();
+        chip8.execute(0xF015);
+        chip8.execute(0xF107);
+        assert_eq!(0x64, chip8.get_v1());
+    }
+
+// NEEDS FIXING
+    // #[test]
+    // fn test_delay_timer_counter() {
+    //     let mut chip8 = set_up();
+    //     while chip8.get_v5() != 255 {
+    //         chip8.cycle();
+    //     }
+    // }
+
+    #[test]
+    fn test_sound_timer() {
+        let mut chip8 = set_up();
+        chip8.execute(0xF018); //Set timer to 0x64
+        chip8.cycle();
+    }
+
+// NEEDS FIXING
+    // #[test]
+    // fn test_emit_sound_timer() {
+    //     let mut chip = init_chip();
+    //     chip.load_rom(std::string::String::from("E05SoundLoop.ch8"));
+    //     while chip.get_v5() != 255 {
+    //         chip.cycle();
+    //     }
+    // }
+
 }
