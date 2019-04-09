@@ -314,6 +314,22 @@ impl Chip8 {
                     _ => panic!("Unsupported opcode.")
                 }
             },
+            0xA000 => {
+                let low = instruction & 0x0FFF;
+                self.i_register = low;
+            },
+            0xD000 => {
+                let lines = instruction & 0x00F;
+                let reg_x = (instruction & 0x0F00) >> 8;
+                let reg_y = (instruction & 0x00F0) >> 4;
+                let x = get_vx(reg_x as usize);
+                let y = get_vx(reg_y as usize);
+                self.registers[0xF] = 0;
+
+                for line in 0..lines {
+                    
+                }
+            },
             0xE000 => {
                 let low = instruction & 0x00FF;
                 let register = (instruction & 0x0F00) >> 8;
@@ -370,9 +386,9 @@ impl Chip8 {
                     //     self.memory[(self.i_register + 1) as usize] = (usize) (((value) % 100) / 10);
                     //     self.memory[(self.i_register + 2) as usize] = (usize) (((value) % 100) % 10);
                     // },
-                    // 0x1E => {
-                    //     self.i_register = self.i_register + self.get_vx(register as usize);
-                    // },
+                    0x1E => {
+                        self.i_register = self.i_register + self.get_vx(register as usize);
+                    },
                     _ => panic!("Unsupported opcode.")
                 }
             },
