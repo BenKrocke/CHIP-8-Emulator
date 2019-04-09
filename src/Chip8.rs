@@ -45,6 +45,62 @@ pub fn init_chip() -> Chip8 {
 
 impl Chip8 {
     
+    pub fn cycle(&mut self) {
+        let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
+        self.pc += 1;
+        let two = self.memory[self.pc as usize] as u16 & 0xFF;
+        self.pc += 1;
+        let instruction = one | two;
+        self.execute(instruction as u32);
+    }
+
+    // Packs a graphics row (8 pixels of the sprite) into a byte
+    pub fn get_sprite_row(&mut self, mut x: u32, mut y: u32, video: [u8; 64 * 32]) -> u8 {
+        x = x % 64;
+        y = y % 32;
+
+        let mut byte1 = self.video[(x + y * 64) as usize];
+        let mut byte2 = self.video[(x + 1 + y * 64) as usize];
+        let mut byte3 = self.video[(x + 2 + y * 64) as usize];
+        let mut byte4 = self.video[(x + 3 + y * 64) as usize];
+        let mut byte5 = self.video[(x + 4 + y * 64) as usize];
+        let mut byte6 = self.video[(x + 5 + y * 64) as usize];
+        let mut byte7 = self.video[(x + 6 + y * 64) as usize];
+        let mut byte8 = self.video[(x + 7 + y * 64) as usize];
+
+        ((byte1 << 7)
+                | (byte2 << 6)
+                | (byte3 << 5)
+                | (byte4 << 4)
+                | (byte5 << 3)
+                | (byte6 << 2)
+                | (byte7 << 1)
+                | (byte8))
+    }
+
+    pub fn get_screen(&mut self) -> [u8; 64 * 32] {
+        self.video
+    }
+
+    fn countdown_timers(&mut self) {
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+            //
+        } else {
+            //
+    }}
+
+    pub fn get_i_register(&self) -> &u32 { 
+        &self.i_register
+    }
+
+    pub fn get_sp(&self) -> &u32 {
+        &self.sp
+    }
+
     pub fn load_rom(&mut self, game: std::string::String) {
         println!("Loading: {:?}", game);
         
@@ -342,7 +398,7 @@ impl Chip8 {
             _ => panic!("Unsupported opcode.")
         }
     }
-
+}
 
     // memory 1: 0x60
     // in binary: 0000 0000 0110 0000
@@ -375,32 +431,3 @@ impl Chip8 {
     // r= 0000 0000 0110 0000 0001 0101
 
     // result binary to hex: 0x6015 = je opcode
-
-    pub fn cycle(&mut self) {
-        let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
-        self.pc += 1;
-        let two = self.memory[self.pc as usize] as u16 & 0xFF;
-        self.pc += 1;
-        let instruction = one | two;
-        self.execute(instruction as u32);
-    }
-
-    fn countdown_timers(&mut self) {
-        if self.delay_timer > 0 {
-            self.delay_timer -= 1;
-        }
-        if self.sound_timer > 0 {
-            self.sound_timer -= 1;
-            //
-        } else {
-            //
-        }}
-
-    pub fn get_i_register(&self) -> &u32 { 
-        &self.i_register
-    }
-
-    pub fn get_sp(&self) -> &u32 {
-        &self.sp
-    }
-}
