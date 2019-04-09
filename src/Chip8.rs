@@ -1,9 +1,8 @@
-use std::env;
 use std::fs;
 use rand::Rng;
-use std::num::Wrapping;
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::time::Duration;
+use piston::input::keyboard::Key;
+
+use crate::input::Input;
 
 pub struct Chip8 {
     pc: u32,
@@ -15,7 +14,8 @@ pub struct Chip8 {
     stack: [u32; 16],
     memory: [u8; 4096],
     video: [u8; 64 * 32],
-    next_timer: u32
+    next_timer: u32,
+    input: Input
 }
 
 pub fn init_chip() -> Chip8 {
@@ -29,10 +29,9 @@ pub fn init_chip() -> Chip8 {
         stack: [0; 16],
         memory: [0; 4096],
         video: [0; 64 * 32],
-        next_timer: 0
+        next_timer: 0,
+        input: Input::new()
     };
-
-    chip.load_rom(std::string::String::from("E03TestRom.ch8"));
 
     return chip;
 }
@@ -156,7 +155,7 @@ impl Chip8 {
             0x3000 => {
                 let low = 0x00FF & instruction;
                 let register = (0x0F00 & instruction) >> 8;
-                if (self.get_vx(register as usize) == low)
+                if self.get_vx(register as usize) == low
                 {
                     self.pc = self.pc + 0x2;
                 }
@@ -164,14 +163,14 @@ impl Chip8 {
             0x4000 => { //Skip the following instruction if the value of register VX is not equal to NN
                 let low = 0x0FF & instruction;
                 let register = (instruction & 0x0f00) >> 8;
-                if (self.get_vx(register as usize) != low) {
+                if self.get_vx(register as usize) != low {
                     self.pc = self.pc + 0x2;
                 }
             },
             0x5000 => { //Skip the following instruction if the value of register VX is equal to the value of register VY
                 let reg_x = (instruction & 0x0F00) >> 8;
                 let reg_y = (instruction & 0x00F0) >> 4;
-                if (self.get_vx(reg_x as usize) == self.get_vx(reg_y as usize)) {
+                if self.get_vx(reg_x as usize) == self.get_vx(reg_y as usize) {
                     self.pc = self.pc + 2;
                 }
             },
@@ -214,8 +213,8 @@ impl Chip8 {
                         let y = self.get_vx(register_y as usize);
                         let diff;
                         let mut under_zero = false;
-                        if (x.checked_sub(y) == None) {
-                            diff = ((256 - y) + x);
+                        if x.checked_sub(y) == None {
+                            diff = (256 - y) + x;
                             under_zero = true;
                         } else {
                             diff = x - y;
@@ -244,7 +243,7 @@ impl Chip8 {
             0x9000 => { // Skip the following instruction if the value of register VX is not equal to the value of register VY
                 let register_y = (instruction & 0x00f0) >> 4;
                 let register_x = (instruction & 0x0f00) >> 8;
-                if (self.get_vx(register_x as usize) != self.get_vx(register_y as usize)) {
+                if self.get_vx(register_x as usize) != self.get_vx(register_y as usize) {
                     self.pc = self.pc + 0x2;
                 }
             },
@@ -255,6 +254,16 @@ impl Chip8 {
                         self.pc = self.stack[self.sp as usize];
                     },
                     _ => panic!("Unsupported opcode.")
+                }
+            },
+            0xE000 => {
+                let low = instruction & 0x00FF;
+                let register = (instruction & 0x0F00) >> 8;
+
+                self.pc += match low {
+                    0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
+                    0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
+                    _    => 0
                 }
             },
             0xF000 => {
@@ -282,13 +291,15 @@ impl Chip8 {
                     0x18 => {
                         self.sound_timer = self.get_vx(register as usize);
                     },
-                    // 0x0A => {
-                    //     if (Input.read() == -1) {
-                    //         self.pc = self.pc - 0x2;
-                    //     } else {
-                    //         self.set_vx(Input.read(), register as usize);
-                    //     }
-                    // },
+                    0x0A => {
+                        for i in 0u8..16 {
+                            if self.input.pressed(i as usize) {
+                                self.set_vx(i as u32, register as usize);
+                                break;
+                            }
+                        }
+                        self.pc -= 2;
+                    },
                     0x07 => {
                         self.set_vx(self.delay_timer, register as usize);
                     },
@@ -373,10 +384,10 @@ impl Chip8 {
     }
 
     fn countdown_timers(&mut self) {
-        if (self.delay_timer > 0) {
+        if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
-        if (self.sound_timer > 0) {
+        if self.sound_timer > 0 {
             self.sound_timer -= 1;
             //
         } else {
@@ -682,6 +693,7 @@ mod clock_execution_and_memory_tests {
 
     fn set_up_load_rom() -> Chip8 {
         let mut chip = init_chip();
+        chip.load_rom(std::string::String::from("E03TestRom.ch8"));
         chip
     }
 
@@ -826,4 +838,101 @@ mod timer_tests {
     //     }
     // }
 
+}
+
+#[cfg(test)]
+mod input_tests {
+    use super::*;
+
+    fn set_up() -> Chip8 {
+        let mut chip = init_chip();
+        chip.load_rom(std::string::String::from("E06KeypadLoop.ch8"));
+        chip.execute(0x6064);
+        chip.execute(0x6127);
+        chip.execute(0x6212);
+        chip.execute(0x63AE);
+        chip.execute(0x64FF);
+        chip.execute(0x65B4);
+        chip.execute(0x6642);
+        chip.execute(0x6F25);
+        chip
+    }
+
+    /**
+     * The opcode FX0A will wait for a key press and store its value into
+     * register VX.
+     * 
+     * This test will execute the opcode and then call cycle several times.  As 
+     * long as the program counter does not increment we will assume that chip8
+     * is not executing.
+     * 
+    */
+    #[test]
+    fn test_chip8_waits_for_keyboard_input() {
+        let mut chip8 = set_up();
+        let pc = chip8.get_pc();
+        chip8.cycle();
+        chip8.cycle();
+        chip8.cycle();
+        chip8.cycle();
+        assert_eq!(pc, chip8.get_pc());
+    }
+
+    #[test]
+    fn test_chip8_continues_after_keyboard_input() {
+        let mut chip8 = set_up();
+        let pc = chip8.get_pc();
+        chip8.cycle();
+        chip8.cycle();
+        assert_eq!(pc, chip8.get_pc());
+
+        chip8.input.press(Key::Z, true);
+        chip8.cycle();
+        chip8.cycle();
+        assert_eq!(0xA, chip8.get_v6());
+    }
+
+    /**
+     * The next opcode will skip the next instruction until the keypress matches 
+     * a value in a certain register.
+     * 
+     * EX9E : Skip the next instruction of the key corresponding to the value in 
+     * VX is pressed.
+     * 
+    */
+    #[test]
+    fn skip_if_pressed() {
+        let mut chip8 = set_up();
+        chip8.input.press(Key::NumPad1, true);
+        chip8.execute(0x6002);//Store 0x02 into V0
+        chip8.execute(0xE09E);//Skip if 0x02 is pressed (it isn't)
+        assert_eq!(0x200, chip8.get_pc());
+        
+        chip8.input.press(Key::NumPad2, true);
+        chip8.execute(0x6002);//Store 0x02 into V0
+        chip8.execute(0xE09E);//Skip if 0x02 is pressed (it is)
+        assert_eq!(0x202, chip8.get_pc());
+    }
+
+    /**
+     * The next opcode will not skip the next instruction if the keypress 
+     * matches a value in a certain register.
+     * 
+     * EXA1 : Skip the next instruction of the key corresponding to the value in 
+     * VX is not pressed.
+     * 
+    */
+    #[test]
+    fn skip_if_not_pressed() {
+        let mut chip8 = set_up();
+        chip8.input.press(Key::NumPad1, true);
+        chip8.execute(0x6002);//Store 0x02 into V0
+        chip8.execute(0xE0A1);//Skip if 0x02 is not pressed (it isn't)
+        assert_eq!(0x202, chip8.get_pc());
+    
+        chip8.input.press(Key::NumPad2, true);
+        chip8.execute(0x6002);//Store 0x02 into V0
+        chip8.execute(0xE0A1);//Skip if 0x02 is pressed (it is)
+        assert_eq!(0x202, chip8.get_pc());
+    }
 }
