@@ -322,8 +322,8 @@ impl Chip8 {
                 let lines = instruction & 0x00F;
                 let reg_x = (instruction & 0x0F00) >> 8;
                 let reg_y = (instruction & 0x00F0) >> 4;
-                let x = get_vx(reg_x as usize);
-                let y = get_vx(reg_y as usize);
+                let x = self.get_vx(reg_x as usize);
+                let y = self.get_vx(reg_y as usize);
                 self.registers[0xF] = 0;
 
                 for line in 0..lines {
