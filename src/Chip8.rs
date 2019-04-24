@@ -52,7 +52,7 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
-        thread::sleep(time::Duration::from_millis(100));
+        thread::sleep(time::Duration::from_millis(10));
         //println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
         //println!("one: {:#x}", one);
@@ -324,10 +324,10 @@ impl Chip8 {
             },
             0x0000 => {
                 match instruction {
-                    // 0x0000 => {
-                    //     // self.display.clear();
-                    //     // self.pc = self.pc + 1;
-                    // },
+                    0x0000 => {
+                        //self.display.clear();
+                        self.pc += 2;
+                    },
                     0x00EE => {
                         self.sp = self.sp - 1;
                         self.pc = self.stack[self.sp as usize] as u32;
