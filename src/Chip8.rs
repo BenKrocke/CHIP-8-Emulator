@@ -5,8 +5,10 @@ mod bitwise_opcode_tests;
 mod clock_execution_and_memory_tests;
 mod flow_control_tests;
 mod timer_tests;
-mod input_tests;
+//mod input_tests;
 mod graphic_tests;
+
+use std::{thread, time};
 
 use crate::input::Input;
 use crate::display::Display;
@@ -18,7 +20,7 @@ pub struct Chip8 {
     sp: u32,
     delay_timer: u32,
     sound_timer: u32,
-    stack: [u32; 16],
+    stack: [u8; 16],
     memory: [u8; 4096],
     video: [u8; 64 * 32],
     next_timer: u32,
@@ -50,20 +52,21 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
-        println!("New cycle -----------");
+        thread::sleep(time::Duration::from_millis(100));
+        //println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
-        println!("one: {:#x}", one);
+        //println!("one: {:#x}", one);
         self.pc += 1;
-        println!("pc: {:#x}", self.pc);
+        //println!("pc: {:#x}", self.pc);
         let two = self.memory[self.pc as usize] as u16 & 0xFF;
-        println!("two: {:#x}", two);
+        //println!("two: {:#x}", two);
         self.pc += 1;
-        println!("pc: {:#x}", self.pc);
+        //println!("pc: {:#x}", self.pc);
         let instruction = one | two;
         
         println!("Instruction: {:#x}", instruction);
         self.execute(instruction as u32);
-        println!("End cycle -----------");
+        //println!("End cycle -----------");
     }
 
     // Packs a graphics row (8 pixels of the sprite) into a byte
@@ -214,12 +217,12 @@ impl Chip8 {
         match high {
             0x1000 => {
                 let low = 0x0FFF & instruction;
-                println!("Low: {:#x}", low);
+                //println!("Low: {:#x}", low);
                 self.pc = low;
-                println!("PC: {:#x}", self.pc);
+                //println!("PC: {:#x}", self.pc);
             },
             0x2000 => {
-                self.stack[self.sp as usize] = self.pc;
+                self.stack[self.sp as usize] = self.pc as u8;
                 self.sp = self.sp + 1;
                 let low = 0x0FFF & instruction;
                 self.pc = low;
@@ -327,7 +330,7 @@ impl Chip8 {
                     // },
                     0x00EE => {
                         self.sp = self.sp - 1;
-                        self.pc = self.stack[self.sp as usize];
+                        self.pc = self.stack[self.sp as usize] as u32;
                     },
                     0x00E0 => {
                         self.video = [0; 64 * 32];
@@ -345,19 +348,21 @@ impl Chip8 {
             },
             0xC000 => {
                 let low = 0x0FF & instruction;
-                println!("Low: {}.", low);
+                //println!("Low: {}.", low);
 
                 let register = (instruction & 0x0F00) >> 8;
-                println!("Register: {}.", register);
+                //println!("Register: {}.", register);
                 
                 let rand = self.random(0xFF);
-                println!("Random: {}.", rand);
+                //println!("Random: {}.", rand);
 
                 let val = rand & low;
-                println!("Value: {}.", val);
+                //println!("Value: {}.", val);
 
                 self.set_vx(val, register as usize);
             },
+            	// Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
+                // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
             0xD000 => {
                 let from = self.i_register as usize;
                 let op_n = 0x000F & instruction;
@@ -365,18 +370,19 @@ impl Chip8 {
                 let op_y = (0x00F0 & instruction) >> 4;
 
                 let to = (from + op_n as usize) as usize;
-                let x = self.stack[op_x as usize];
-                let y = self.stack[op_y as usize];
-                self.stack[15] = self.display.draw(x as usize, y as usize, &self.memory[from..to]) as u32;
-                self.pc += 1;
+                let x = self.get_vx(op_x as usize);
+                let y = self.get_vx(op_y as usize);
+                let val = self.display.draw(x as usize, y as usize, &self.memory[from..to]);
+                self.set_vx(val as u32, 0xf);
+                //self.pc += 2;
             },
             0xE000 => {
                 let low = instruction & 0x00FF;
                 let register = (instruction & 0x0F00) >> 8;
 
                 self.pc += match low {
-                    0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
-                    0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
+                    0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
+                    0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
                     _    => 0
                 }
             },
@@ -406,13 +412,18 @@ impl Chip8 {
                         self.sound_timer = self.get_vx(register as usize);
                     },
                     0x0A => {
-                        for i in 0u8..16 {
+                        let mut broken = false;
+                        for i in 0..16 {
                             if self.input.pressed(i as usize) {
                                 self.set_vx(i as u32, register as usize);
+                                broken = true;
                                 break;
                             }
                         }
-                        self.pc -= 2;
+                        if broken == false {
+                            println!("BROKEN");
+                            self.pc -= 0x2;
+                        }
                     },
                     0x07 => {
                         self.set_vx(self.delay_timer, register as usize);
