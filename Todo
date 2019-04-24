@@ -1,6 +1,3 @@
-Daadwerkelijke Mainflow
-Grafische Weergave
-
 00E0	Clear the screen
 
 DXYN	Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I

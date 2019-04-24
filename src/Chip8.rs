@@ -315,6 +315,9 @@ impl Chip8 {
                         self.sp = self.sp - 1;
                         self.pc = self.stack[self.sp as usize];
                     },
+                    0x00E0 => {
+                        self.video = [0; 64 * 32];
+                    },
                     _ => panic!("Unsupported opcode.")
                 }
             },
