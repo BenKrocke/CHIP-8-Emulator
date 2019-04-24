@@ -1,6 +1,5 @@
 use std::fs;
 use rand::Rng;
-use piston::input::keyboard::Key;
 mod arithmic_opcode_tests;
 mod bitwise_opcode_tests;
 mod clock_execution_and_memory_tests;
@@ -10,6 +9,7 @@ mod input_tests;
 mod graphic_tests;
 
 use crate::input::Input;
+use crate::graphics::Graphics;
 
 pub struct Chip8 {
     pc: u32,
@@ -22,7 +22,8 @@ pub struct Chip8 {
     memory: [u8; 4096],
     video: [u8; 64 * 32],
     next_timer: u32,
-    input: Input
+    input: Input,
+    graphics: Graphics
 }
 
 pub fn init_chip() -> Chip8 {
@@ -37,7 +38,8 @@ pub fn init_chip() -> Chip8 {
         memory: [0; 4096],
         video: [0; 64 * 32],
         next_timer: 0,
-        input: Input::new()
+        input: Input::new(),
+        graphics: Graphics::new()
     };
 
     return chip;
