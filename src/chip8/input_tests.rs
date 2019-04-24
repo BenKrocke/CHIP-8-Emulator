@@ -61,12 +61,12 @@ mod input_tests {
     #[test]
     fn skip_if_pressed() {
         let mut chip8 = set_up();
-        chip8.input.press(Key::NumPad1, true);
+        chip8.input.press(Key::Num1, true);
         chip8.execute(0x6002);//Store 0x02 into V0
         chip8.execute(0xE09E);//Skip if 0x02 is pressed (it isn't)
         assert_eq!(0x200, chip8.get_pc());
         
-        chip8.input.press(Key::NumPad2, true);
+        chip8.input.press(Key::Num2, true);
         chip8.execute(0x6002);//Store 0x02 into V0
         chip8.execute(0xE09E);//Skip if 0x02 is pressed (it is)
         assert_eq!(0x202, chip8.get_pc());
@@ -83,12 +83,12 @@ mod input_tests {
     #[test]
     fn skip_if_not_pressed() {
         let mut chip8 = set_up();
-        chip8.input.press(Key::NumPad1, true);
+        chip8.input.press(Key::Num1, true);
         chip8.execute(0x6002);//Store 0x02 into V0
         chip8.execute(0xE0A1);//Skip if 0x02 is not pressed (it isn't)
         assert_eq!(0x202, chip8.get_pc());
     
-        chip8.input.press(Key::NumPad2, true);
+        chip8.input.press(Key::Num2, true);
         chip8.execute(0x6002);//Store 0x02 into V0
         chip8.execute(0xE0A1);//Skip if 0x02 is pressed (it is)
         assert_eq!(0x202, chip8.get_pc());

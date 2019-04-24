@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 rand = { version = "0.6", features = ["log"] }
 rand_core = "0.4.0"
-piston = "0.42.0"
-piston2d-graphics = "0.30.0"
-pistoncore-glutin_window = "0.54.0"
-piston2d-opengl_graphics = "0.59.0"
+
+[dependencies.sdl]
+git = "https://github.com/brson/rust-sdl.git"
