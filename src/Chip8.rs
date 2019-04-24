@@ -50,12 +50,20 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
+        println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
+        println!("one: {:#x}", one);
         self.pc += 1;
+        println!("pc: {:#x}", self.pc);
         let two = self.memory[self.pc as usize] as u16 & 0xFF;
+        println!("two: {:#x}", two);
         self.pc += 1;
+        println!("pc: {:#x}", self.pc);
         let instruction = one | two;
+        
+        println!("Instruction: {:#x}", instruction);
         self.execute(instruction as u32);
+        println!("End cycle -----------");
     }
 
     // Packs a graphics row (8 pixels of the sprite) into a byte
@@ -206,7 +214,9 @@ impl Chip8 {
         match high {
             0x1000 => {
                 let low = 0x0FFF & instruction;
+                println!("Low: {:#x}", low);
                 self.pc = low;
+                println!("PC: {:#x}", self.pc);
             },
             0x2000 => {
                 self.stack[self.sp as usize] = self.pc;
@@ -311,6 +321,10 @@ impl Chip8 {
             },
             0x0000 => {
                 match instruction {
+                    // 0x0000 => {
+                    //     // self.display.clear();
+                    //     // self.pc = self.pc + 1;
+                    // },
                     0x00EE => {
                         self.sp = self.sp - 1;
                         self.pc = self.stack[self.sp as usize];
@@ -318,7 +332,7 @@ impl Chip8 {
                     0x00E0 => {
                         self.video = [0; 64 * 32];
                     },
-                    _ => panic!("Unsupported opcode.")
+                    _ => panic!("Unsupported opcode. {:#x}", instruction)
                 }
             },
             0xA000 => {
@@ -345,16 +359,16 @@ impl Chip8 {
                 self.set_vx(val, register as usize);
             },
             0xD000 => {
-                let lines = instruction & 0x00F;
-                let reg_x = (instruction & 0x0F00) >> 8;
-                let reg_y = (instruction & 0x00F0) >> 4;
-                let x = self.get_vx(reg_x as usize);
-                let y = self.get_vx(reg_y as usize);
-                self.registers[0xF] = 0;
+                let from = self.i_register as usize;
+                let op_n = 0x000F & instruction;
+                let op_x = (0x0F00 & instruction) >> 8;
+                let op_y = (0x00F0 & instruction) >> 4;
 
-                for line in 0..lines {
-                    
-                }
+                let to = (from + op_n as usize) as usize;
+                let x = self.stack[op_x as usize];
+                let y = self.stack[op_y as usize];
+                self.stack[15] = self.display.draw(x as usize, y as usize, &self.memory[from..to]) as u32;
+                self.pc += 1;
             },
             0xE000 => {
                 let low = instruction & 0x00FF;
@@ -374,13 +388,13 @@ impl Chip8 {
                     0x15 => {
                         self.delay_timer = self.get_vx(register as usize);
                     },
-                    // 0x65 => {
-                    //     usize maxRegister = (usize) register;
-                    //         for (let i = 0; i <= maxRegister; i++) {
-                    //             self.set_vx(self.memory[self.i_register as usize], i as usize);
-                    //             self.i_register = self.i_register + 1;
-                    //     }
-                    // },
+                    0x65 => {
+                        let mut maxRegister = register as usize;
+                            for i in 0..maxRegister  {
+                                self.set_vx(self.memory[self.i_register as usize] as u32, i as usize);
+                                self.i_register = self.i_register + 1;
+                        }
+                    },
                     // 0x55 => {
                     //     usize maxRegister = (usize) register;
                     //     for (let i = 0; i <= maxRegister; i++) {
@@ -403,22 +417,23 @@ impl Chip8 {
                     0x07 => {
                         self.set_vx(self.delay_timer, register as usize);
                     },
-                    // 0x29 => {
-                    //     self.i_register = getCharacterAddress(self.get_vx(register as usize));
-                    // },
-                    // 0x33 => {
-                    //     let value = self.get_vx(register as usize);
-                    //     self.memory[self.i_register as usize] = (usize) (value / 100);
-                    //     self.memory[(self.i_register + 1) as usize] = (usize) (((value) % 100) / 10);
-                    //     self.memory[(self.i_register + 2) as usize] = (usize) (((value) % 100) % 10);
-                    // },
+                    0x29 => {
+                        let op_x = 0xF & instruction;
+                        self.i_register = ((self.memory[op_x as usize] as u32) * 5) as u32;
+                    },
+                    0x33 => {
+                        let value = self.get_vx(register as usize);
+                        self.memory[self.i_register as usize] = (value / 100) as u8;
+                        self.memory[(self.i_register + 1) as usize] = (((value) % 100) / 10) as u8;
+                        self.memory[(self.i_register + 2) as usize] = (((value) % 100) % 10) as u8;
+                    },
                     0x1E => {
                         self.i_register = self.i_register + self.get_vx(register as usize);
                     },
-                    _ => panic!("Unsupported opcode.")
+                    _ => panic!("Unsupported opcode. {:#x}", instruction)
                 }
             },
-            _ => panic!("Unsupported opcode.")
+            _ => panic!("Unsupported opcode. {:#x}", instruction)
         }
     }
 }
