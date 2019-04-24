@@ -1,0 +1,15 @@
+Daadwerkelijke Mainflow
+Grafische Weergave
+Laatste fixes in de code zelf
+
+0NNN	Execute machine language subroutine at address NNN
+00E0	Clear the screen
+DXYN	Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
+Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
+
+FX29	Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+FX33	Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+FX55	Store the values of registers V0 to VX inclusive in memory starting at address I
+I is set to I + X + 1 after operation
+FX65	Fill registers V0 to VX inclusive with the values stored in memory starting at address I
+I is set to I + X + 1 after operation

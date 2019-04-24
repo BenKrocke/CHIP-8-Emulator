@@ -318,6 +318,25 @@ impl Chip8 {
                 let low = instruction & 0x0FFF;
                 self.i_register = low;
             },
+            0xB000 => {
+                let low = 0x0FFF & instruction;
+                self.pc = low + self.get_v0();
+            },
+            0xC000 => {
+                let low = 0x0FF & instruction;
+                println!("Low: {}.", low);
+
+                let register = (instruction & 0x0F00) >> 8;
+                println!("Register: {}.", register);
+                
+                let rand = self.random(0xFF);
+                println!("Random: {}.", rand);
+
+                let val = rand & low;
+                println!("Value: {}.", val);
+
+                self.set_vx(val, register as usize);
+            },
             0xD000 => {
                 let lines = instruction & 0x00F;
                 let reg_x = (instruction & 0x0F00) >> 8;
@@ -391,25 +410,6 @@ impl Chip8 {
                     },
                     _ => panic!("Unsupported opcode.")
                 }
-            },
-            0xB000 => {
-                let low = 0x0FFF & instruction;
-                self.pc = low + self.get_v0();
-            },
-            0xC000 => {
-                let low = 0x0FF & instruction;
-                println!("Low: {}.", low);
-
-                let register = (instruction & 0x0F00) >> 8;
-                println!("Register: {}.", register);
-                
-                let rand = self.random(0xFF);
-                println!("Random: {}.", rand);
-
-                let val = rand & low;
-                println!("Value: {}.", val);
-
-                self.set_vx(val, register as usize);
             },
             _ => panic!("Unsupported opcode.")
         }
