@@ -1,5 +1,5 @@
 use std::fs;
-use rand::Rng;
+// use rand::Rng;
 mod arithmic_opcode_tests;
 mod bitwise_opcode_tests;
 mod clock_execution_and_memory_tests;
@@ -9,6 +9,7 @@ mod timer_tests;
 mod graphic_tests;
 
 use std::{thread, time};
+use rand::{Rng, SeedableRng, XorShiftRng};
 
 use crate::input::Input;
 use crate::display::Display;
@@ -25,7 +26,7 @@ pub struct Chip8 {
     video: [u8; 64 * 32],
     next_timer: u32,
     pub input: Input,
-    pub display: Display
+    pub display: Display,
 }
 
 pub fn init_chip() -> Chip8 {
@@ -44,7 +45,186 @@ pub fn init_chip() -> Chip8 {
         display: Display::new()
     };
 
-    for i in 0..80 { chip.memory[i] = fontset[i]; }
+    //for i in 0..80 { chip.memory[i] = fontset[i]; }
+    //load_font();
+
+    let mut i = 0;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0x20;
+    i += 1;
+    chip.memory[i] = 0x60;
+    i += 1;
+    chip.memory[i] = 0x20;
+    i += 1;
+    chip.memory[i] = 0x20;
+    i += 1;
+    chip.memory[i] = 0x70;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0x20;
+    i += 1;
+    chip.memory[i] = 0x40;
+    i += 1;
+    chip.memory[i] = 0x40;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x10;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+
+    chip.memory[i] = 0xE0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xE0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xE0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xE0;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0x90;
+    i += 1;
+    chip.memory[i] = 0xE0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0xF0;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
+    chip.memory[i] = 0x80;
+    i += 1;
     
     return chip;
 }
@@ -52,7 +232,7 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
-        thread::sleep(time::Duration::from_millis(10));
+        //thread::sleep(time::Duration::from_millis(500));
         //println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
         //println!("one: {:#x}", one);
@@ -64,7 +244,7 @@ impl Chip8 {
         //println!("pc: {:#x}", self.pc);
         let instruction = one | two;
         
-        println!("Instruction: {:#x}", instruction);
+        //println!("Instruction: {:#x}", instruction);
         self.execute(instruction as u32);
         //println!("End cycle -----------");
     }
@@ -278,33 +458,30 @@ impl Chip8 {
                         self.set_vx(self.get_vx(register_y as usize) ^ self.get_vx(register_x as usize), register_x as usize);  
                     },
                     0x0004 => {
-                        let sum = self.get_vx(register_x as usize) + self.get_vx(register_y as usize);
-                        self.registers[0xf] = if sum > 0xFF { 1 } else { 0 };
-                        self.set_vx(sum, register_x as usize);
+                        let v_x = self.get_vx(register_x as usize);
+                        let v_y = self.get_vx(register_y as usize);
+                        let (result, did_overflow) = v_x.overflowing_add(v_y);
+                        self.set_vx(result, register_x as usize);
+                        let val = if did_overflow { 1 } else { 0 };
+                        self.set_vx(val, 0xF);
                     },
                     0x0005 => {
-                        // Iets met Rust overflow - TODO: SET REGISTER F IF BORROW OCCURS
-                        let x = self.get_vx(register_x as usize);
-                        let y = self.get_vx(register_y as usize);
-                        let diff;
-                        let mut under_zero = false;
-                        if x.checked_sub(y) == None {
-                            diff = (256 - y) + x;
-                            under_zero = true;
-                        } else {
-                            diff = x - y;
-                        }
-                        self.registers[0xf] = if !under_zero { 1 } else { 0 };
-                        self.set_vx(diff, register_x as usize);
+                        let v_x = self.get_vx(register_x as usize);
+                        let v_y = self.get_vx(register_y as usize);
+                        let val = if v_x > v_y { 1 } else { 0 };
+                        self.set_vx(val, 0xF);
+                        self.set_vx(v_x.wrapping_sub(v_y), register_x as usize);
                     },
                     0x0006 => {
                         self.registers[0xf] = self.get_vx(register_x as usize) & 0x01;
                         self.set_vx(self.get_vx(register_x as usize) >> 1, register_x as usize);
                     },
                     0x0007 => {
-                        let diff = self.get_vx(register_y as usize) - self.get_vx(register_x as usize);
-                        self.registers[0xf] = if diff > 0 { 1 } else { 0 };
-                        self.set_vx(diff, register_x as usize);
+                        let v_x = self.get_vx(register_x as usize);
+                        let v_y = self.get_vx(register_y as usize);
+                        let val = if v_y > v_x { 1 } else { 0 };
+                        self.set_vx(val, 0xF);
+                        self.set_vx(v_y.wrapping_sub(v_x), register_x as usize);
                     },
                     0x000E => {
                         self.registers[0xf] = (self.get_vx(register_x as usize) >> 7) & 0x01;
@@ -326,7 +503,7 @@ impl Chip8 {
                 match instruction {
                     0x0000 => {
                         //self.display.clear();
-                        self.pc += 2;
+                        //self.pc += 2;
                     },
                     0x00EE => {
                         self.sp = self.sp - 1;
@@ -344,26 +521,36 @@ impl Chip8 {
             },
             0xB000 => {
                 let low = 0x0FFF & instruction;
-                self.pc = low + self.get_v0();
+                let computed_low = low.wrapping_add(self.get_v0());
+                self.pc = computed_low;
             },
             0xC000 => {
                 let low = 0x0FF & instruction;
-                //println!("Low: {}.", low);
+                // //println!("Low: {}.", low);
 
                 let register = (instruction & 0x0F00) >> 8;
-                //println!("Register: {}.", register);
+                // //println!("Register: {}.", register);
                 
                 let rand = self.random(0xFF);
-                //println!("Random: {}.", rand);
+                println!("Random: {}.", rand);
 
                 let val = rand & low;
-                //println!("Value: {}.", val);
+                // //println!("Value: {}.", val);
 
                 self.set_vx(val, register as usize);
+                
+                // let reg_x = (instruction & 0x0F00) >> 8;
+                // let operand = 0x0FF & instruction as u8;
+                // let next_random: u8 = self.rng.gen();
+                // let result = next_random & operand;
+                // self.registers.v[reg_x] = result;
+
             },
             	// Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
                 // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
             0xD000 => {
+                println!("Waiting for !");
+
                 let from = self.i_register as usize;
                 let op_n = 0x000F & instruction;
                 let op_x = (0x0F00 & instruction) >> 8;
@@ -379,7 +566,7 @@ impl Chip8 {
             0xE000 => {
                 let low = instruction & 0x00FF;
                 let register = (instruction & 0x0F00) >> 8;
-
+                //println!("Waiting for input!");
                 self.pc += match low {
                     0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
                     0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
@@ -420,7 +607,7 @@ impl Chip8 {
                                 break;
                             }
                         }
-                        if broken == false {
+                        if broken == true {
                             println!("BROKEN");
                             self.pc -= 0x2;
                         }
@@ -448,44 +635,3 @@ impl Chip8 {
         }
     }
 }
-
-static fontset: [u8; 80] = [0xF0, 0x90, 0x90, 0x90, 0xF0, 0x20, 0x60, 0x20, 0x20, 0x70,
-0xF0, 0x10, 0xF0, 0x80, 0xF0, 0xF0, 0x10, 0xF0, 0x10, 0xF0,
-0x90, 0x90, 0xF0, 0x10, 0x10, 0xF0, 0x80, 0xF0, 0x10, 0xF0,
-0xF0, 0x80, 0xF0, 0x90, 0xF0, 0xF0, 0x10, 0x20, 0x40, 0x40,
-0xF0, 0x90, 0xF0, 0x90, 0xF0, 0xF0, 0x90, 0xF0, 0x10, 0xF0,
-0xF0, 0x90, 0xF0, 0x90, 0x90, 0xE0, 0x90, 0xE0, 0x90, 0xE0,
-0xF0, 0x80, 0x80, 0x80, 0xF0, 0xE0, 0x90, 0x90, 0x90, 0xE0,
-0xF0, 0x80, 0xF0, 0x80, 0xF0, 0xF0, 0x80, 0xF0, 0x80, 0x80];
-
-    // memory 1: 0x60
-    // in binary: 0000 0000 0110 0000
-    // memory 2: 0x15
-    // in binary: 0000 0000 0001 0101
-
-    // je wil: 0x6015
-
-    // dit werkt natuurlijk niet: 60 + 15
-
-    // shift memory 1 met 8, zodat je genoeg nullen toevoegt aan de binary zodat je 0x6000 krijgt
-    // 0x60
-    // << 8
-    // wordt:
-
-    // hex:
-    // 1= 0x6000
-    // 2= 0x15
-
-    // en binary:
-    // 1= 0000 0000 0110 0000 0000 0000 <- zie hoe hij is geshift
-    // 2=           0000 0000 0001 0101
-
-    // vervolgens inclusive bit OR met beide values
-    // 1 | 2
-
-    // dan krijg je dit:
-    // 1= 0000 0000 0110 0000 0000 0000
-    // 2=           0000 0000 0001 0101
-    // r= 0000 0000 0110 0000 0001 0101
-
-    // result binary to hex: 0x6015 = je opcode
