@@ -232,7 +232,7 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
-        //thread::sleep(time::Duration::from_millis(500));
+        //thread::sleep(time::Duration::from_millis(50));
         //println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
         //println!("one: {:#x}", one);
@@ -241,10 +241,12 @@ impl Chip8 {
         let two = self.memory[self.pc as usize] as u16 & 0xFF;
         //println!("two: {:#x}", two);
         self.pc += 1;
-        //println!("pc: {:#x}", self.pc);
         let instruction = one | two;
         
+        //println!("pc: {:#x} -> {:#x}", self.pc, instruction);
+        
         //println!("Instruction: {:#x}", instruction);
+        //println!("Instruction: {:#X} PC: {:?} Memory: {:?}", instruction, self.pc, self.memory[self.pc as usize]);
         self.execute(instruction as u32);
         //println!("End cycle -----------");
     }
@@ -502,7 +504,8 @@ impl Chip8 {
             0x0000 => {
                 match instruction {
                     0x0000 => {
-                        //self.display.clear();
+                        self.video = [0; 64 * 32];
+                        self.display.clear();
                         //self.pc += 2;
                     },
                     0x00EE => {
@@ -511,6 +514,10 @@ impl Chip8 {
                     },
                     0x00E0 => {
                         self.video = [0; 64 * 32];
+                        self.display.clear();
+                        // for i in 0..(64 * 32) {
+                        //     println!("{:?}", self.video[i]);
+                        // }
                     },
                     _ => panic!("Unsupported opcode. {:#x}", instruction)
                 }
@@ -549,7 +556,7 @@ impl Chip8 {
             	// Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
                 // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
             0xD000 => {
-                println!("Waiting for !");
+                //println!("Waiting for !");
 
                 let from = self.i_register as usize;
                 let op_n = 0x000F & instruction;
@@ -560,6 +567,7 @@ impl Chip8 {
                 let x = self.get_vx(op_x as usize);
                 let y = self.get_vx(op_y as usize);
                 let val = self.display.draw(x as usize, y as usize, &self.memory[from..to]);
+                //println!("")
                 self.set_vx(val as u32, 0xf);
                 //self.pc += 2;
             },
@@ -588,13 +596,13 @@ impl Chip8 {
                                 self.i_register = self.i_register + 1;
                         }
                     },
-                    // 0x55 => {
-                    //     usize maxRegister = (usize) register;
-                    //     for (let i = 0; i <= maxRegister; i++) {
-                    //         self.memory[self.i_register as usize] = (usize) self.get_vx(i as usize);
-                    //         self.i_register = self.i_register + 1;
-                    //     }
-                    // },
+                    0x55 => {
+                        let op_x = 0xF & instruction;
+                        for i in 0..op_x + 1 {
+                            self.memory[(self.i_register + i) as usize] = self.stack[i as usize]
+                        }
+                        self.i_register += (op_x + 1);
+                    },
                     0x18 => {
                         self.sound_timer = self.get_vx(register as usize);
                     },
@@ -617,7 +625,7 @@ impl Chip8 {
                     },
                     0x29 => {
                         let op_x = 0xF & instruction;
-                        self.i_register = ((self.memory[op_x as usize] as u32) * 5) as u32;
+                        self.i_register = ((self.stack[op_x as usize] as u32) * 5) as u32;
                     },
                     0x33 => {
                         let value = self.get_vx(register as usize);
@@ -628,7 +636,7 @@ impl Chip8 {
                     0x1E => {
                         self.i_register = self.i_register + self.get_vx(register as usize);
                     },
-                    _ => panic!("Unsupported opcode. {:#x}", instruction)
+                    _ => println!("Unsupported opcode. {:#x}", instruction)
                 }
             },
             _ => panic!("Unsupported opcode. {:#x}", instruction)

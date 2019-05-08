@@ -7,9 +7,11 @@ mod chip8;
 mod input;
 mod display;
 
+
 fn main() {
     let mut chip = chip8::init_chip();
-    chip.load_rom(std::string::String::from("pong"));
+    //chip.load_rom(std::string::String::from("BC_test.ch8"));
+    chip.load_rom(std::string::String::from("Space Invaders [David Winter].ch8"));
 
     sdl::init(&[sdl::InitFlag::Video, sdl::InitFlag::Audio, sdl::InitFlag::Timer]);
 
