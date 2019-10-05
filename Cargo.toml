@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 rand = { version = "0.6", features = ["log"] }
 rand_core = "0.4.0"
+prettytable-rs = "^0.8"
 
 [dependencies.sdl]
 git = "https://github.com/brson/rust-sdl.git"

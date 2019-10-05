@@ -14,6 +14,7 @@ use rand::{Rng, SeedableRng, XorShiftRng};
 use crate::input::Input;
 use crate::display::Display;
 
+
 pub struct Chip8 {
     pc: u32,
     i_register: u32,
@@ -232,7 +233,11 @@ pub fn init_chip() -> Chip8 {
 impl Chip8 {
     
     pub fn cycle(&mut self) {
-        //thread::sleep(time::Duration::from_millis(50));
+        println!("PC = {:#X} | SP = {:#X} I = {:#X} | V0 = {:#X} | V1 = {:#X} | V2 = {:#X} | V3 = {:#X} | V4 = {:#X} | V5 = {:#X} | V6 = {:#X} | V7 = {:#X} | V8 = {:#X} | V9 = {:#X} | VA = {:#X} | VB = {:#X} | VC = {:#X} | VD = {:#X} | VE = {:#X} | VF = {:#X} ", 
+            self.pc, self.sp, self.i_register,
+            self.get_v0(), self.get_v1(), self.get_v2(), self.get_v3(), self.get_v4(), self.get_v5(), self.get_v6(), self.get_v7(), self.get_v8(), self.get_v9(), self.get_va(), self.get_vb(), self.get_vc(), self.get_vd(), self.get_ve(), self.get_vf()
+        );
+        // thread::sleep(time::Duration::from_millis(100));
         //println!("New cycle -----------");
         let one = ((self.memory[self.pc as usize] as u16) << 8) & 0xFF00;
         //println!("one: {:#x}", one);
@@ -242,10 +247,19 @@ impl Chip8 {
         //println!("two: {:#x}", two);
         self.pc += 1;
         let instruction = one | two;
+        println!("{:#X}", instruction);
+
+
         
-        //println!("pc: {:#x} -> {:#x}", self.pc, instruction);
+        // let table = table!(["ABC", "DEFG", "HIJKLMN"],
+        //             ["foobar", "bar", "foo"],
+        //             ["foobar2", "bar2", "foo2"]);
+
+        // table.printstd();
+
+        // println!("pc: {:#x} -> {:#x}", self.pc, instruction);
         
-        //println!("Instruction: {:#x}", instruction);
+        // println!("Instruction: {:#x}", instruction);
         //println!("Instruction: {:#X} PC: {:?} Memory: {:?}", instruction, self.pc, self.memory[self.pc as usize]);
         self.execute(instruction as u32);
         //println!("End cycle -----------");
@@ -398,15 +412,15 @@ impl Chip8 {
 
         match high {
             0x1000 => {
-                let low = 0x0FFF & instruction;
-                //println!("Low: {:#x}", low);
+                let low = instruction & 0x0FFF;
+                println!("Low: {:#x}", low);
                 self.pc = low;
-                //println!("PC: {:#x}", self.pc);
+                println!("PC: {:#x}", self.pc);
             },
             0x2000 => {
                 self.stack[self.sp as usize] = self.pc as u8;
                 self.sp = self.sp + 1;
-                let low = 0x0FFF & instruction;
+                let low = instruction & 0x0FFF;
                 self.pc = low;
             },
             0x3000 => {
@@ -414,12 +428,12 @@ impl Chip8 {
                 let register = (0x0F00 & instruction) >> 8;
                 if self.get_vx(register as usize) == low
                 {
-                    self.pc = self.pc + 0x2;
+                    self.pc += 2;//self.pc + 0x2;
                 }
             },
             0x4000 => { //Skip the following instruction if the value of register VX is not equal to NN
-                let low = 0x0FF & instruction;
-                let register = (instruction & 0x0f00) >> 8;
+                let low = 0x00FF & instruction;
+                let register = (0x0F00 & instruction) >> 8;
                 if self.get_vx(register as usize) != low {
                     self.pc = self.pc + 0x2;
                 }
@@ -498,7 +512,7 @@ impl Chip8 {
                 let register_y = (instruction & 0x00f0) >> 4;
                 let register_x = (instruction & 0x0f00) >> 8;
                 if self.get_vx(register_x as usize) != self.get_vx(register_y as usize) {
-                    self.pc = self.pc + 0x2;
+                    self.pc += 2;
                 }
             },
             0x0000 => {
@@ -506,7 +520,6 @@ impl Chip8 {
                     0x0000 => {
                         self.video = [0; 64 * 32];
                         self.display.clear();
-                        //self.pc += 2;
                     },
                     0x00EE => {
                         self.sp = self.sp - 1;
@@ -518,6 +531,7 @@ impl Chip8 {
                         // for i in 0..(64 * 32) {
                         //     println!("{:?}", self.video[i]);
                         // }
+
                     },
                     _ => panic!("Unsupported opcode. {:#x}", instruction)
                 }
@@ -572,14 +586,14 @@ impl Chip8 {
                 //self.pc += 2;
             },
             0xE000 => {
-                let low = instruction & 0x00FF;
-                let register = (instruction & 0x0F00) >> 8;
-                //println!("Waiting for input!");
-                self.pc += match low {
-                    0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
-                    0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
-                    _    => 0
-                }
+                // let low = instruction & 0x00FF;
+                // let register = (instruction & 0x0F00) >> 8;
+                // //println!("Waiting for input!");
+                // self.pc += match low {
+                //     0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
+                //     0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 0x2 } else { 0 },
+                //     _    => 0
+                // }
             },
             0xF000 => {
                 let low = instruction & 0xFF;
@@ -589,19 +603,19 @@ impl Chip8 {
                     0x15 => {
                         self.delay_timer = self.get_vx(register as usize);
                     },
-                    0x65 => {
-                        let mut maxRegister = register as usize;
-                            for i in 0..maxRegister  {
-                                self.set_vx(self.memory[self.i_register as usize] as u32, i as usize);
-                                self.i_register = self.i_register + 1;
-                        }
-                    },
                     0x55 => {
-                        let op_x = 0xF & instruction;
-                        for i in 0..op_x + 1 {
-                            self.memory[(self.i_register + i) as usize] = self.stack[i as usize]
+                        for i in 0..register + 1{
+                            self.memory[(self.i_register + i) as usize] = self.get_vx(i as usize) as u8;
                         }
-                        self.i_register += (op_x + 1);
+                        // self.pc += 2;
+                    },
+                    0x65 => {
+                        for i in 0..register + 1 {
+                            println!("{:?}", i);
+                            self.set_vx(self.memory[(self.i_register + i) as usize] as u32, i as usize)
+                        }                            
+
+                        // self.pc += 2;
                     },
                     0x18 => {
                         self.sound_timer = self.get_vx(register as usize);
