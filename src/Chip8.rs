@@ -13,11 +13,10 @@ use rand::{Rng, SeedableRng, XorShiftRng};
 use crate::input::Input;
 use crate::display::Display;
 
-
 pub struct Chip8 {
-    pc: u32,
-    i_register: u32,
-    registers: [u32; 0x10],
+    program_counter: u32,  //The program counter (PC) should be 16-bit, and is used to store the currently executing address.
+    i_register: u32, // There is also a 16-bit register called I. This register is generally used to store memory addresses, so only the lowest (rightmost) 12 bits are usually used.
+    registers: [u32; 0x10], // Chip-8 has 16 general purpose 8-bit registers, usually referred to as Vx, where x is a hexadecimal digit (0 through F). There is also a 16-bit register called I. This register is generally used to store memory addresses, so only the lowest (rightmost) 12 bits are usually used.
     sp: u32,
     delay_timer: u32,
     sound_timer: u32,
@@ -31,7 +30,7 @@ pub struct Chip8 {
 
 pub fn init_chip() -> Chip8 {
     let mut chip = Chip8 {
-        pc: 0x200,
+        program_counter: 0x200,
         i_register: 0,
         registers: [0; 0x10],
         sp: 0,
@@ -233,16 +232,17 @@ impl Chip8 {
     
     pub fn cycle(&mut self) {
         //println!("PC = {:#X} | SP = {:#X} I = {:#X} | V0 = {:#X} | V1 = {:#X} | V2 = {:#X} | V3 = {:#X} | V4 = {:#X} | V5 = {:#X} | V6 = {:#X} | V7 = {:#X} | V8 = {:#X} | V9 = {:#X} | VA = {:#X} | VB = {:#X} | VC = {:#X} | VD = {:#X} | VE = {:#X} | VF = {:#X} ", 
-        //    self.pc, self.sp, self.i_register,
+        //    self.program_counter, self.sp, self.i_register,
         //    self.get_v0(), self.get_v1(), self.get_v2(), self.get_v3(), self.get_v4(), self.get_v5(), self.get_v6(), self.get_v7(), self.get_v8(), self.get_v9(), self.get_va(), self.get_vb(), self.get_vc(), self.get_vd(), self.get_ve(), self.get_vf()
         //);
         thread::sleep(time::Duration::from_millis(1));
-        let one = ((self.memory[self.pc as usize] as u32) << 8) & 0xFF00;
-        self.pc += 1;
-        let two = self.memory[self.pc as usize] as u32 & 0xFF;
-        self.pc += 1;
+        let opcode_part_one = ((self.memory[self.program_counter as usize] as u32) << 8) & 0xFF00;
 
-        let instruction = one | two;
+        self.program_counter += 1;
+        let opcode_part_two = self.memory[self.program_counter as usize] as u32 & 0xFF;
+        self.program_counter += 1;
+
+        let instruction = opcode_part_one | opcode_part_two;
 
         let start = SystemTime::now();
         let time = start.duration_since(UNIX_EPOCH)
@@ -316,7 +316,7 @@ impl Chip8 {
     }
 
     pub fn get_pc(&self) -> u32 { 
-        self.pc 
+        self.program_counter 
     }
 
     fn set_vx(&mut self, value: u32, register: usize) {
@@ -397,34 +397,34 @@ impl Chip8 {
         match high {
             0x1000 => {
                 let low = instruction & 0x0FFF;
-                self.pc = low;
+                self.program_counter = low;
             },
             0x2000 => {
-                self.stack[self.sp as usize] = self.pc as u32;
+                self.stack[self.sp as usize] = self.program_counter as u32;
                 self.sp += 1;
                 let low = instruction & 0x0FFF;
-                self.pc = low;
+                self.program_counter = low;
             },
             0x3000 => {
                 let low = 0x00FF & instruction;
                 let register = (0x0F00 & instruction) >> 8;
                 if self.get_vx(register as usize) == low
                 {
-                    self.pc += 2;
+                    self.program_counter += 2;
                 }
             },
             0x4000 => { //Skip the following instruction if the value of register VX is not equal to NN
                 let low = 0x00FF & instruction;
                 let register = (0x0F00 & instruction) >> 8;
                 if self.get_vx(register as usize) != low {
-                    self.pc = self.pc + 0x2;
+                    self.program_counter = self.program_counter + 0x2;
                 }
             },
             0x5000 => { //Skip the following instruction if the value of register VX is equal to the value of register VY
                 let reg_x = (instruction & 0x0F00) >> 8;
                 let reg_y = (instruction & 0x00F0) >> 4;
                 if self.get_vx(reg_x as usize) == self.get_vx(reg_y as usize) {
-                    self.pc = self.pc + 2;
+                    self.program_counter = self.program_counter + 2;
                 }
             },
             0x6000 => { //6XNN	Store number NN in register VX
@@ -494,7 +494,7 @@ impl Chip8 {
                 let register_y = (instruction & 0x00f0) >> 4;
                 let register_x = (instruction & 0x0f00) >> 8;
                 if self.get_vx(register_x as usize) != self.get_vx(register_y as usize) {
-                    self.pc += 2;
+                    self.program_counter += 2;
                 }
             },
             0x0000 => {
@@ -505,7 +505,7 @@ impl Chip8 {
                     },
                     0x00EE => {
                         self.sp -= 1;
-                        self.pc = self.stack[self.sp as usize] as u32;
+                        self.program_counter = self.stack[self.sp as usize] as u32;
                     },
                     0x00E0 => {
                         self.video = [0; 64 * 32];
@@ -521,7 +521,7 @@ impl Chip8 {
             0xB000 => {
                 let low = 0x0FFF & instruction;
                 let computed_low = low.wrapping_add(self.get_v0());
-                self.pc = computed_low;
+                self.program_counter = computed_low;
             },
             0xC000 => {
                 let low = 0x00FF & instruction;
@@ -552,7 +552,7 @@ impl Chip8 {
                 let low = instruction & 0x00FF;
                 let register = (instruction & 0x0F00) >> 8;
 
-                self.pc += match low {
+                self.program_counter += match low {
                     0x9E => if self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
                     0xA1 => if !self.input.pressed(self.get_vx(register as usize) as usize) { 2 } else { 0 },
                     _    => 0
@@ -591,7 +591,7 @@ impl Chip8 {
                         }
                         if broken == true {
                             println!("BROKEN");
-                            self.pc -= 0x2;
+                            self.program_counter -= 0x2;
                         }
                     },
                     0x07 => {

@@ -28,21 +28,21 @@ mod input_tests {
     #[test]
     fn test_chip8_waits_for_keyboard_input() {
         let mut chip8 = set_up();
-        let pc = chip8.get_pc();
+        let program_counter = chip8.get_pc();
         chip8.cycle();
         chip8.cycle();
         chip8.cycle();
         chip8.cycle();
-        assert_eq!(pc, chip8.get_pc());
+        assert_eq!(program_counter, chip8.get_pc());
     }
 
     #[test]
     fn test_chip8_continues_after_keyboard_input() {
         let mut chip8 = set_up();
-        let pc = chip8.get_pc();
+        let program_counter = chip8.get_pc();
         chip8.cycle();
         chip8.cycle();
-        assert_eq!(pc, chip8.get_pc());
+        assert_eq!(program_counter, chip8.get_pc());
 
         chip8.input.press(Key::Z, true);
         chip8.cycle();
