@@ -17,10 +17,10 @@ pub struct Chip8 {
     program_counter: u32,  //The program counter (PC) should be 16-bit, and is used to store the currently executing address.
     i_register: u32, // There is also a 16-bit register called I. This register is generally used to store memory addresses, so only the lowest (rightmost) 12 bits are usually used.
     registers: [u32; 0x10], // Chip-8 has 16 general purpose 8-bit registers, usually referred to as Vx, where x is a hexadecimal digit (0 through F). There is also a 16-bit register called I. This register is generally used to store memory addresses, so only the lowest (rightmost) 12 bits are usually used.
-    sp: u32,
-    delay_timer: u32,
-    sound_timer: u32,
-    stack: [u32; 16],
+    sp: u32,// The stack pointer (SP) can be 8-bit, it is used to point to the topmost level of the stack.
+    delay_timer: u32, // Chip-8 also has two special purpose 8-bit registers, for the delay and sound timers. When these registers are non-zero, they are automatically decremented at a rate of 60Hz. See the section 2.5, Timers & Sound, for more information on these.
+    sound_timer: u32, // Chip-8 also has two special purpose 8-bit registers, for the delay and sound timers. When these registers are non-zero, they are automatically decremented at a rate of 60Hz. See the section 2.5, Timers & Sound, for more information on these.
+    stack: [u32; 16], // The stack is an array of 16 16-bit values, used to store the address that the interpreter shoud return to when finished with a subroutine. Chip-8 allows for up to 16 levels of nested subroutines.
     memory: [u8; 4096],
     video: [u8; 64 * 32],
     next_timer: u32,
